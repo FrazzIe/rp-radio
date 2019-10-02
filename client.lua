@@ -1,5 +1,5 @@
 local Radio = {
-    Has = true,
+    Has = false,
     Open = false,
     On = false,
     Handle = nil,
@@ -226,9 +226,9 @@ Citizen.CreateThread(function()
         local isPlayingBroadcastAnim = IsEntityPlayingAnim(playerPed, broadcastDictionary, broadcastAnimation, 3)
 
         -- Open radio settings
-        if isActivatorPressed and isSecondaryPressed and isKeyboard and not isFalling and not isPrisoner and not isCuffed and Radio.Has then
+        if isActivatorPressed and isSecondaryPressed and isKeyboard and not isFalling and not isPrisoner and not isCuffed and Radio.Has and not isDead then
             Radio:Toggle(not Radio.Open)
-        elseif Radio.Open and (isFalling or isPrisoner or isCuffed or (not Radio.Has)) then
+        elseif (Radio.Open or Radio.On) and (isFalling or isPrisoner or isCuffed or (not Radio.Has) or isDead) then
             Radio:Toggle(false)
             Radio.On = false
 
