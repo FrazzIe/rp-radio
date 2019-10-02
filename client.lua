@@ -218,6 +218,7 @@ Citizen.CreateThread(function()
         local isSecondaryPressed = IsControlPressed(0, 21)
         local isKeyboard = IsInputDisabled(2)
         local isFalling = IsPedFalling(playerPed)
+        local isDead = IsEntityDead(playerPed)
         local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or 10)
         local broadcastType = 3 + (isEmergency and 1 or 0) + ((Radio.Open and isEmergency) and -1 or 0) 
         local broadcastDictionary = Radio.Dictionary[broadcastType]
@@ -350,6 +351,16 @@ Citizen.CreateThread(function()
                 end
             end
         end
+    end
+end)
+
+RegisterNetEvent("Radio.Toggle")
+AddEventHandler("Radio.Toggle", function(value)
+    local isFalling = IsPedFalling(playerPed)
+    local isDead = IsEntityDead(playerPed)
+    
+    if not isFalling and not isDead then
+        Radio:Toggle(not Radio.Open)
     end
 end)
 
