@@ -229,11 +229,12 @@ Citizen.CreateThread(function()
         -- Open radio settings
         if isActivatorPressed and isSecondaryPressed and isKeyboard and not isFalling and not isPrisoner and not isCuffed and Radio.Has and not isDead then
             Radio:Toggle(not Radio.Open)
-        elseif (Radio.Open or Radio.On) and (isFalling or isPrisoner or isCuffed or (not Radio.Has) or isDead) then
+        elseif (Radio.Open or Radio.On) and (isPrisoner or isCuffed or (not Radio.Has) or isDead) then
             Radio:Toggle(false)
             Radio.On = false
-
             Radio:Remove(Radio.Frequency.Current)
+        elseif Radio.Open and isFalling then
+            Radio:Toggle(false)
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
