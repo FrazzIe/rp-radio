@@ -367,5 +367,5 @@ end)
 
 RegisterNetEvent("Radio.Set")
 AddEventHandler("Radio.Set", function(value)
-    Radio.Has = (value == 1 or value == true) and true or false
+    Radio.Has = (value == 1 or value == true or value == "true") and true or false
 end)
