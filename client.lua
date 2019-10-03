@@ -38,7 +38,7 @@ local Radio = {
         { "FRZL_RADIO_HELP2", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~r~off~s~.~n~Press ~INPUT_VEH_PUSHBIKE_SPRINT~ to broadcast." },
     },
     Frequency = {
-        Current = 10,
+        Current = 5,
         Min = 0,
         Max = 800,
     }
@@ -219,7 +219,7 @@ Citizen.CreateThread(function()
         local isKeyboard = IsInputDisabled(2)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
-        local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or 10)
+        local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or 5)
         local broadcastType = 3 + (isEmergency and 1 or 0) + ((Radio.Open and isEmergency) and -1 or 0) 
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
@@ -238,12 +238,12 @@ Citizen.CreateThread(function()
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
-        if not isEmergency and Radio.Frequency.Current < 10 and Radio.On then
+        if not isEmergency and Radio.Frequency.Current < 5 and Radio.On then
             Radio:Remove(Radio.Frequency.Current)
-            Radio.Frequency.Current = 10
+            Radio.Frequency.Current = 5
             Radio:Add(Radio.Frequency.Current)
-        elseif not isEmergency and Radio.Frequency.Current < 10 and not Radio.On then
-            Radio.Frequency.Current = 10
+        elseif not isEmergency and Radio.Frequency.Current < 5 and not Radio.On then
+            Radio.Frequency.Current = 5
         end
 
         -- Check if player is holding radio
