@@ -309,31 +309,34 @@ Citizen.CreateThread(function()
             end
 
             -- Change radio frequency
-            if not Radio.Controls.Decrease.Pressed then
-                if IsControlJustPressed(0, Radio.Controls.Decrease.Key) then
-                    Radio.Controls.Decrease.Pressed = true
-                    Citizen.CreateThread(function()
-                        while IsControlPressed(0, Radio.Controls.Decrease.Key) do
-                            Radio:Decrease(minFrequency)
-                            Citizen.Wait(125)
-                        end
+            if not Radio.On then
+                if not Radio.Controls.Decrease.Pressed then
+                    if IsControlJustPressed(0, Radio.Controls.Decrease.Key) then
+                        Radio.Controls.Decrease.Pressed = true
+                        Citizen.CreateThread(function()
+                            while IsControlPressed(0, Radio.Controls.Decrease.Key) do
+                                Radio:Decrease(minFrequency)
+                                Citizen.Wait(125)
+                            end
 
-                        Radio.Controls.Decrease.Pressed = false
-                    end)
+                            Radio.Controls.Decrease.Pressed = false
+                        end)
+                    end
                 end
-            end
 
-            if not Radio.Controls.Increase.Pressed then
-                if IsControlJustPressed(0, Radio.Controls.Increase.Key) then
-                    Radio.Controls.Increase.Pressed = true
-                    Citizen.CreateThread(function()
-                        while IsControlPressed(0, Radio.Controls.Increase.Key) do
-                            Radio:Increase(minFrequency)
-                            Citizen.Wait(125)
-                        end
+                if not Radio.Controls.Increase.Pressed then
+                    if IsControlJustPressed(0, Radio.Controls.Increase.Key) then
+                        Radio.Controls.Increase.Pressed = true
+                        Citizen.CreateThread(function()
+                            while IsControlPressed(0, Radio.Controls.Increase.Key) do
+                                Radio:Increase(minFrequency)
+                                Citizen.Wait(125)
+                            end
 
-                        Radio.Controls.Increase.Pressed = false
-                    end)
+                            Radio.Controls.Increase.Pressed = false
+                        end)
+                    end
+                end
                 end
             end
         else
