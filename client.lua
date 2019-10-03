@@ -31,11 +31,16 @@ local Radio = {
             Key = 174,
             Pressed = false,
         },
+        Input = {
+            Key = 201,
+            Pressed = false,
+        },
         Broadcast = 137,
     },
     Labels = {        
-        { "FRZL_RADIO_HELP", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~g~on~s~.~n~Frequency ← ~1~ MHz →" },
+        { "FRZL_RADIO_HELP", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~g~on~s~.~n~Frequency ← ~1~ MHz →~n~Press ~INPUT_FRONTEND_ACCEPT~ to choose frequency" },
         { "FRZL_RADIO_HELP2", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~r~off~s~.~n~Press ~INPUT_VEH_PUSHBIKE_SPRINT~ to broadcast." },
+        { "FRZL_RADIO_INPUT", "Enter Frequency"},
     },
     Frequency = {
         Current = 5,
@@ -337,6 +342,35 @@ Citizen.CreateThread(function()
                         end)
                     end
                 end
+
+                if not Radio.Controls.Input.Pressed then
+                    if IsControlJustPressed(0, Radio.Controls.Input.Key) then
+                        Radio.Controls.Input.Pressed = true
+                        Citizen.CreateThread(function()
+                            DisplayOnscreenKeyboard(1, Radio.Labels[3][1], "", Radio.Frequency.Current, "", "", "", 3)
+
+                            while UpdateOnscreenKeyboard() ~= 1 and UpdateOnscreenKeyboard() ~= 2 do
+                                Citizen.Wait(150)
+                            end
+
+                            local input = nil
+
+                            if UpdateOnscreenKeyboard() ~= 2 then
+                                input = GetOnscreenKeyboardResult()
+                            end
+
+                            Citizen.Wait(500)
+                            
+                            if input ~= nil then
+                                input = tonumber(input)
+                                if input >= minFrequency and input <= Radio.Frequency.Max and input == math.floor(input) then
+                                    Radio.Frequency.Current = input
+                                end
+                            end
+                            
+                            Radio.Controls.Input.Pressed = false
+                        end)
+                    end
                 end
             end
         else
