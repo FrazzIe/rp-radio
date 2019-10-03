@@ -355,7 +355,8 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent("Radio.Toggle")
-AddEventHandler("Radio.Toggle", function(value)
+AddEventHandler("Radio.Toggle", function()
+    local playerPed = PlayerPedId()
     local isFalling = IsPedFalling(playerPed)
     local isDead = IsEntityDead(playerPed)
     
