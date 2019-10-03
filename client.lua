@@ -40,7 +40,7 @@ local Radio = {
     Frequency = {
         Current = 10,
         Min = 0,
-        Max = 100,
+        Max = 800,
     }
 }
 local isPrisoner = false
