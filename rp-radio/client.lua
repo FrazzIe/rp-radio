@@ -21,7 +21,10 @@ local Radio = {
     },
     Controls = {
         Activator = 289,
-        Secondary = 21,
+        Secondary = {
+            Key = 21,
+            Enabled = true,
+        },
         Toggle = 51,
         Increase = {
             Key = 175,
@@ -220,7 +223,7 @@ Citizen.CreateThread(function()
         -- Init local vars
         local playerPed = PlayerPedId()
         local isActivatorPressed = IsControlJustPressed(0, Radio.Controls.Activator)
-        local isSecondaryPressed = IsControlPressed(0, 21)
+        local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
         local isKeyboard = IsInputDisabled(2)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
