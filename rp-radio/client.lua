@@ -48,7 +48,10 @@ local Radio = {
             Key = 201, -- Enter
             Pressed = false,
         },
-        Broadcast = 137, -- Caps Lock
+        Broadcast = {
+            Name = "INPUT_VEH_PUSHBIKE_SPRINT", -- Control name
+            Key = 137, -- Caps Lock
+        },
     },
     Frequency = {
         Current = 5,
@@ -196,18 +199,22 @@ function IsRadioOpen()
     return Radio.Open
 end
 
+-- Check if radio is switched on
 function IsRadioOn()
     return Radio.On
 end
 
+-- Check if player has radio
 function IsRadioAvailable()
     return Radio.Has
 end
 
+-- Check if radio can be used
 function CanRadioBeUsed()
     return Radio.Has and Radio.On
 end
 
+-- Define exports
 exports("IsRadioOpen", IsRadioOpen)
 exports("IsRadioOn", IsRadioOn)
 exports("IsRadioAvailable", IsRadioAvailable)
@@ -241,7 +248,7 @@ Citizen.CreateThread(function()
         local broadcastType = 3 + (isEmergency and 1 or 0) + ((Radio.Open and isEmergency) and -1 or 0) 
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
-        local isBroadcasting = IsControlPressed(0, Radio.Controls.Broadcast)
+        local isBroadcasting = IsControlPressed(0, Radio.Controls.Broadcast.Key)
         local isPlayingBroadcastAnim = IsEntityPlayingAnim(playerPed, broadcastDictionary, broadcastAnimation, 3)
 
         -- Open radio settings
