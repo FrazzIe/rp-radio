@@ -20,36 +20,46 @@ local Radio = {
         "generic_radio_chatter",
     },
     Controls = {
-        Activator = 289,
+        Activator = {
+            Name = "INPUT_REPLAY_START_STOP_RECORDING_SECONDARY", -- Control name
+            Key = 289, -- F2
+        }
         Secondary = {
-            Key = 21,
-            Enabled = true,
+            Name = "INPUT_SPRINT",
+            Key = 21, -- Left Shift
+            Enabled = true, -- Require secondary to be pressed to open radio with Activator
         },
-        Toggle = 51,
+        Toggle = {
+            Name = "INPUT_CONTEXT", -- Control name
+            Key = 51, -- E
+        },
         Increase = {
-            Key = 175,
+            Name = "INPUT_CELLPHONE_Right", -- Control name
+            Key = 175, -- Right Arrow
             Pressed = false,
         },
         Decrease = {
-            Key = 174,
+            Name = "INPUT_CELLPHONE_LEFT", -- Control name
+            Key = 174, -- Left Arrow
             Pressed = false,
         },
         Input = {
-            Key = 201,
+            Name = "INPUT_FRONTEND_ACCEPT", -- Control name
+            Key = 201, -- Enter
             Pressed = false,
         },
-        Broadcast = 137,
-    },
-    Labels = {        
-        { "FRZL_RADIO_HELP", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~g~on~s~.~n~Frequency ← ~1~ MHz →~n~Press ~INPUT_FRONTEND_ACCEPT~ to choose frequency" },
-        { "FRZL_RADIO_HELP2", "~s~Press ~INPUT_SPRINT~ + ~INPUT_REPLAY_START_STOP_RECORDING_SECONDARY~ to hide.~n~Press ~INPUT_CONTEXT~ to turn radio ~r~off~s~.~n~Press ~INPUT_VEH_PUSHBIKE_SPRINT~ to broadcast." },
-        { "FRZL_RADIO_INPUT", "Enter Frequency"},
+        Broadcast = 137, -- Caps Lock
     },
     Frequency = {
         Current = 5,
         Min = 0,
         Max = 800,
     }
+}
+Radio.Labels = {        
+    { "FRZL_RADIO_HELP", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~Press ~" .. Radio.Controls.Decrease.Name .. "~/~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~Press ~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
 local isPrisoner = false
 local isCuffed = false
@@ -222,7 +232,7 @@ Citizen.CreateThread(function()
         Citizen.Wait(0)
         -- Init local vars
         local playerPed = PlayerPedId()
-        local isActivatorPressed = IsControlJustPressed(0, Radio.Controls.Activator)
+        local isActivatorPressed = IsControlJustPressed(0, Radio.Controls.Activator.Key)
         local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
         local isKeyboard = IsInputDisabled(2)
         local isFalling = IsPedFalling(playerPed)
@@ -304,7 +314,7 @@ Citizen.CreateThread(function()
             end
 
             -- Turn radio on/off
-            if IsControlJustPressed(0, Radio.Controls.Toggle) then
+            if IsControlJustPressed(0, Radio.Controls.Toggle.Key) then
                 Radio.On = not Radio.On
 
                 if Radio.On then
