@@ -65,8 +65,6 @@ Radio.Labels = {
     { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
-local isPrisoner = false
-local isCuffed = false
 local isEmergency = false
 
 -- Create/Destroy handheld radio object
@@ -210,8 +208,8 @@ function IsRadioAvailable()
     return Radio.Has
 end
 
--- Check if radio is disabled
-function IsRadioDisabled()
+-- Check if radio is enabled or not
+function IsRadioEnabled()
     return not Radio.Enabled
 end
 
@@ -220,18 +218,22 @@ function CanRadioBeUsed()
     return Radio.Has and Radio.On
 end
 
+-- Set if the radio is enabled or not
+function SetRadioEnabled(value)
+    Radio.Enabled = value
+end
+
 -- Define exports
 exports("IsRadioOpen", IsRadioOpen)
 exports("IsRadioOn", IsRadioOn)
 exports("IsRadioAvailable", IsRadioAvailable)
-exports("IsRadioDisabled", IsRadioDisabled)
+exports("IsRadioEnabled", IsRadioEnabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
+exports("SetRadioEnabled", SetRadioEnabled)
 
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(2000)        
-        isPrisoner = exports["core_modules"]:IsInJail()
-        isCuffed = exports["policejob"]:getIsCuffed() or exports["core_modules"]:isCuffed()
         isEmergency = exports["policejob"]:getIsInService() or exports["emsjob"]:getIsInService()
     end
 end)
@@ -248,7 +250,6 @@ Citizen.CreateThread(function()
         local playerPed = PlayerPedId()
         local isActivatorPressed = IsControlJustPressed(0, Radio.Controls.Activator.Key)
         local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
-        local isKeyboard = IsInputDisabled(2)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
         local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or 5)
@@ -259,9 +260,9 @@ Citizen.CreateThread(function()
         local isPlayingBroadcastAnim = IsEntityPlayingAnim(playerPed, broadcastDictionary, broadcastAnimation, 3)
 
         -- Open radio settings
-        if isActivatorPressed and isSecondaryPressed and isKeyboard and not isFalling and not isPrisoner and not isCuffed and Radio.Has and not isDead then
+        if isActivatorPressed and isSecondaryPressed and not isFalling and Radio.Enabled and Radio.Has and not isDead then
             Radio:Toggle(not Radio.Open)
-        elseif (Radio.Open or Radio.On) and (isPrisoner or isCuffed or (not Radio.Has) or isDead) then
+        elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
             Radio:Toggle(false)
             Radio.On = false
             Radio:Remove(Radio.Frequency.Current)
