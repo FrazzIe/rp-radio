@@ -2,6 +2,7 @@ local Radio = {
     Has = false,
     Open = false,
     On = false,
+    Enabled = true,
     Handle = nil,
     Prop = `prop_cs_hand_radio`,
     Bone = 28422,
@@ -209,6 +210,11 @@ function IsRadioAvailable()
     return Radio.Has
 end
 
+-- Check if radio is disabled
+function IsRadioDisabled()
+    return not Radio.Enabled
+end
+
 -- Check if radio can be used
 function CanRadioBeUsed()
     return Radio.Has and Radio.On
@@ -218,6 +224,7 @@ end
 exports("IsRadioOpen", IsRadioOpen)
 exports("IsRadioOn", IsRadioOn)
 exports("IsRadioAvailable", IsRadioAvailable)
+exports("IsRadioDisabled", IsRadioDisabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
 
 Citizen.CreateThread(function()
