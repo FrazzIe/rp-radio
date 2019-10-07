@@ -59,6 +59,7 @@
         Current = 1,
         Min = 0,
         Max = 800, -- Number of freqencies
+        Emergency = false,
     }
 }
 Radio.Labels = {        
@@ -66,7 +67,6 @@ Radio.Labels = {
     { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
-local isEmergency = false
 
 -- Create/Destroy handheld radio object
 function Radio:Toggle(toggle)
@@ -224,6 +224,16 @@ function SetRadioEnabled(value)
     Radio.Enabled = value
 end
 
+-- Set if player has access to emergency frequencies
+function SetEmergency(value)
+    Radio.Frequency.Emergency = value
+end
+
+-- Check if player has access to emergency frequencies
+function IsEmergency()
+    return Radio.Frequency.Emergency
+end
+
 -- Define exports
 exports("IsRadioOpen", IsRadioOpen)
 exports("IsRadioOn", IsRadioOn)
@@ -231,13 +241,8 @@ exports("IsRadioAvailable", IsRadioAvailable)
 exports("IsRadioEnabled", IsRadioEnabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
 exports("SetRadioEnabled", SetRadioEnabled)
-
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(2000)        
-        isEmergency = exports["policejob"]:getIsInService() or exports["emsjob"]:getIsInService()
-    end
-end)
+exports("SetEmergency", SetEmergency)
+exports("IsEmergency", IsEmergency)
 
 Citizen.CreateThread(function()
     -- Add Labels
@@ -253,8 +258,8 @@ Citizen.CreateThread(function()
         local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
-        local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or (Radio.Frequency.Private + 1))
-        local broadcastType = 3 + (isEmergency and 1 or 0) + ((Radio.Open and isEmergency) and -1 or 0) 
+        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
+        local broadcastType = 3 + (Radio.Frequency.Emergency and 1 or 0) + ((Radio.Open and Radio.Frequency.Emergency) and -1 or 0) 
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
         local isBroadcasting = IsControlPressed(0, Radio.Controls.Broadcast.Key)
@@ -272,11 +277,11 @@ Citizen.CreateThread(function()
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
-        if not isEmergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
+        if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
             Radio:Remove(Radio.Frequency.Current)
             Radio.Frequency.Current = Radio.Frequency.Private
             Radio:Add(Radio.Frequency.Current)
-        elseif not isEmergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
+        elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
             Radio.Frequency.Current = Radio.Frequency.Private
         end
 
@@ -404,7 +409,7 @@ Citizen.CreateThread(function()
             end
         else
             -- Play emergency services radio animation
-            if isEmergency then
+            if Radio.Frequency.Emergency then
                 if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim then
                     RequestAnimDict(broadcastDictionary)
     
@@ -434,5 +439,5 @@ end)
 
 RegisterNetEvent("Radio.Set")
 AddEventHandler("Radio.Set", function(value)
-    Radio.Has = (value == 1 or value == true or value == "true") and true or false
+    Radio.Has = value
 end)
