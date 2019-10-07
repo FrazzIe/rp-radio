@@ -1,4 +1,4 @@
-local Radio = {
+ local Radio = {
     Has = false,
     Open = false,
     On = false,
@@ -55,9 +55,10 @@ local Radio = {
         },
     },
     Frequency = {
-        Current = 5,
+        Private = 4 -- Number of private frequencies for emergency servvices
+        Current = 1,
         Min = 0,
-        Max = 800,
+        Max = 800, -- Number of freqencies
     }
 }
 Radio.Labels = {        
@@ -252,7 +253,7 @@ Citizen.CreateThread(function()
         local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
-        local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or 5)
+        local minFrequency = Radio.Frequency.Min + (isEmergency and 1 or (Radio.Frequency.Private + 1))
         local broadcastType = 3 + (isEmergency and 1 or 0) + ((Radio.Open and isEmergency) and -1 or 0) 
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
@@ -271,12 +272,12 @@ Citizen.CreateThread(function()
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
-        if not isEmergency and Radio.Frequency.Current < 5 and Radio.On then
+        if not isEmergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
             Radio:Remove(Radio.Frequency.Current)
-            Radio.Frequency.Current = 5
+            Radio.Frequency.Current = Radio.Frequency.Private
             Radio:Add(Radio.Frequency.Current)
-        elseif not isEmergency and Radio.Frequency.Current < 5 and not Radio.On then
-            Radio.Frequency.Current = 5
+        elseif not isEmergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
+            Radio.Frequency.Current = Radio.Frequency.Private
         end
 
         -- Check if player is holding radio
