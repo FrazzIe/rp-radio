@@ -4,10 +4,6 @@ ui_page "index.html"
 
 dependencies {
 	"tokovoip_script",
-	"policejob",
-	"emsjob",
-	"core_modules",
-	"core",
 }
 
 files {
