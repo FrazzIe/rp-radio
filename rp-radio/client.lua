@@ -344,10 +344,10 @@ Citizen.CreateThread(function()
         -- Remove player from emergency services comms if not part of the emergency services
         if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
             Radio:Remove(Radio.Frequency.Current)
-            Radio.Frequency.Current = Radio.Frequency.Private
+            Radio.Frequency.Current = minFrequency
             Radio:Add(Radio.Frequency.Current)
         elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
-            Radio.Frequency.Current = Radio.Frequency.Private
+            Radio.Frequency.Current = minFrequency
         end
 
         -- Check if player is holding radio
