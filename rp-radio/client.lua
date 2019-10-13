@@ -84,6 +84,7 @@ Radio.Commands = {
                 Radio:Toggle(false)
                 Radio.On = false
                 Radio:Remove(Radio.Frequency.Current)
+                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
             elseif Radio.Open and isFalling then
                 Radio:Toggle(false)
             end            
@@ -149,6 +150,10 @@ function Radio:Toggle(toggle)
     end
 
     self.Open = toggle
+
+    if self.On and not self.Frequency.Emergency then
+        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", toggle)
+    end
 
     local dictionaryType = 1 + (IsPedInAnyVehicle(playerPed, false) and 1 or 0)
     local animationType = 1 + (self.Open and 0 or 1)
@@ -282,6 +287,10 @@ end
 -- Set if player has access to emergency frequencies
 function SetEmergency(value)
     Radio.Frequency.Emergency = value
+
+    if Radio.On and not Radio.Open and Radio.Frequency.Emergency then
+        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", true)
+    end
 end
 
 -- Check if player has access to emergency frequencies
@@ -327,6 +336,7 @@ Citizen.CreateThread(function()
             Radio:Toggle(false)
             Radio.On = false
             Radio:Remove(Radio.Frequency.Current)
+            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
@@ -392,6 +402,8 @@ Citizen.CreateThread(function()
             -- Turn radio on/off
             if IsControlJustPressed(0, Radio.Controls.Toggle.Key) then
                 Radio.On = not Radio.On
+
+                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", Radio.On)
 
                 if Radio.On then
                     SendNUIMessage({ sound = "audio_on", volume = 0.3})
@@ -479,6 +491,18 @@ Citizen.CreateThread(function()
             end
         end
     end
+end)
+
+Citizen.CreateThread(function()
+	while true do
+		Citizen.Wait(0)
+		if NetworkIsSessionStarted() then
+            exports["tokovoip_script"]:SetTokoProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
+            exports["tokovoip_script"]:SetTokoProperty("radioAnim", false) -- Disable built-in toko radio animation
+            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false) -- Disable radio control
+			return
+		end
+	end
 end)
 
 RegisterNetEvent("Radio.Toggle")
