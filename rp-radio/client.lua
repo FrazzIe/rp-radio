@@ -100,14 +100,19 @@ Radio.Commands = {
         Handler = function(src, args, raw)
             if Radio.Has then
                 if args[1] then
-                    if tonumber(args[1]) then
+                    local newFrequency = tonumber(args[1])
+                    if newFrequency then
                         local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
-                        if args[1] >= minFrequency and args[1] <= Radio.Frequency.Max and args[1] == math.floor(input) then
+                        if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.Max and newFrequency == math.floor(newFrequency) then
                             if Radio.Enabled then
                                 Radio:Remove(Radio.Frequency.Current)
                             end
-                            Radio.Frequency.Current = args[1]
-                            Radio:Add(Radio.Frequency.Current)     
+
+                            Radio.Frequency.Current = newFrequency
+                            
+                            if Radio.On then
+                                Radio:Add(Radio.Frequency.Current)
+                            end
                         end
                     end
                 end                    
