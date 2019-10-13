@@ -24,7 +24,7 @@ local Radio = {
         Activator = {
             Name = "INPUT_REPLAY_START_STOP_RECORDING_SECONDARY", -- Control name
             Key = 289, -- F2
-        }
+        },
         Secondary = {
             Name = "INPUT_SPRINT",
             Key = 21, -- Left Shift
@@ -55,7 +55,7 @@ local Radio = {
         },
     },
     Frequency = {
-        Private = 4 -- Number of private frequencies for emergency services
+        Private = 4, -- Number of private frequencies for emergency services
         Current = 1,
         Min = 0,
         Max = 800, -- Number of freqencies
