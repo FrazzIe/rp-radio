@@ -364,14 +364,9 @@ Citizen.CreateThread(function()
             end
 
             -- Display help text
-            if Radio.On then
-                BeginTextCommandDisplayHelp(Radio.Labels[2][1])
-                EndTextCommandDisplayHelp(false, false, false, -1)
-            else
-                BeginTextCommandDisplayHelp(Radio.Labels[1][1])
-                AddTextComponentInteger(Radio.Frequency.Current)
-                EndTextCommandDisplayHelp(false, false, false, -1)
-            end
+            BeginTextCommandDisplayHelp(Radio.Labels[Radio.On and 2 or 1][1])
+            AddTextComponentInteger(Radio.Frequency.Current)
+            EndTextCommandDisplayHelp(false, false, false, -1)
 
             -- Play animation if player is broadcasting to radio
             if Radio.On then
