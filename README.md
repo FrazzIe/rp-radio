@@ -34,3 +34,7 @@ Setters
 | ------------ | -------------------------------- | ---------------------- |
 | Radio.Toggle | Opens/close the radio            | none                   |
 | Radio.Set    | Set if player has a radio or not | bool                   |
+
+### Preview
+
+[![Image from Gyazo](https://i.gyazo.com/798085b3fae66bd2452b8844a10375b4.gif)](https://gyazo.com/798085b3fae66bd2452b8844a10375b4)
