@@ -55,12 +55,12 @@
         },
     },
     Frequency = {
-        Private = 4 -- Number of private frequencies for emergency servvices
+        Private = 4 -- Number of private frequencies for emergency services
         Current = 1,
         Min = 0,
         Max = 800, -- Number of freqencies
         Emergency = false,
-    }
+    },
 }
 Radio.Labels = {        
     { "FRZL_RADIO_HELP", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~Press ~" .. Radio.Controls.Decrease.Name .. "~/~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~Press ~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~Frequency: ~1~ MHz" },
