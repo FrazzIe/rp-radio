@@ -67,6 +67,61 @@ Radio.Labels = {
     { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
+Radio.Commands = {
+    {
+        Enabled = true, -- Add a command to be able to open/close the radio
+        Name = "radio", -- Command name
+        Help = "Toggle hand radio", -- Command help shown in chatbox when typing the command
+        Params = {},
+        Handler = function(src, args, raw)
+            local playerPed = PlayerPedId()
+            local isFalling = IsPedFalling(playerPed)
+            local isDead = IsEntityDead(playerPed)
+
+            if not isFalling and Radio.Enabled and Radio.Has and not isDead then
+                Radio:Toggle(not Radio.Open)
+            elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
+                Radio:Toggle(false)
+                Radio.On = false
+                Radio:Remove(Radio.Frequency.Current)
+            elseif Radio.Open and isFalling then
+                Radio:Toggle(false)
+            end            
+        end,
+    },
+    {
+        Enabled = true, -- Add a command to choose radio frequency
+        Name = "frequency", -- Command name
+        Help = "Change radio frequency", -- Command help shown in chatbox when typing the command
+        Params = {
+            {name = "number", "Enter frequency"}
+        },
+        Handler = function(src, args, raw)
+            if Radio.Has then
+                if args[1] then
+                    if tonumber(args[1]) then
+                        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
+                        if args[1] >= minFrequency and args[1] <= Radio.Frequency.Max and args[1] == math.floor(input) then
+                            if Radio.Enabled then
+                                Radio:Remove(Radio.Frequency.Current)
+                            end
+                            Radio.Frequency.Current = args[1]
+                            Radio:Add(Radio.Frequency.Current)     
+                        end
+                    end
+                end                    
+            end
+        end,
+    },
+}
+
+-- Setup each radio command if enabled
+for i = 1, #Radio.Commands do
+    if Radio.Commands[i].Enabled then
+        RegisterCommand(Radio.Commands[i].Name, Radio.Commands[i].Handler, false)
+        TriggerEvent("chat:addSuggestion", "/" .. Radio.Commands[i].Name, Radio.Commands[i].Help, Radio.Commands[i].Params)
+    end
+end
 
 -- Create/Destroy handheld radio object
 function Radio:Toggle(toggle)
