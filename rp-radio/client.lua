@@ -281,12 +281,17 @@ end
 
 -- Check if radio can be used
 function CanRadioBeUsed()
-    return Radio.Has and Radio.On
+    return Radio.Has and Radio.On and Radio.Enabled
 end
 
 -- Set if the radio is enabled or not
 function SetRadioEnabled(value)
     Radio.Enabled = value
+end
+
+-- Set if player has a radio or not
+function SetRadio(value)
+    Radio.Has = value
 end
 
 -- Set if player has access to emergency frequencies
@@ -310,6 +315,7 @@ exports("IsRadioAvailable", IsRadioAvailable)
 exports("IsRadioEnabled", IsRadioEnabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
 exports("SetRadioEnabled", SetRadioEnabled)
+exports("SetRadio", SetRadio)
 exports("SetEmergency", SetEmergency)
 exports("IsEmergency", IsEmergency)
 
