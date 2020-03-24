@@ -11,15 +11,20 @@ Getters
 | IsRadioAvailable | Check if player has a radio                         | bool        |
 | IsRadioEnabled   | Check if radio is enabled                           | bool        |
 | CanRadioBeUsed   | Check if radio can be used                          | bool        |
-| IsEmergency      | Check if player has access to emergency frequencies | bool        |
 
 Setters
  
-| Export           | Description                                         | Parameter(s) |
-| ---------------- | --------------------------------------------------- | ------------ |
-| SetRadioEnabled  | Set if the radio is enabled or not                  | bool         |
-| SetRadio         | Set if player has a radio or not                    | bool         |
-| SetEmergency     | Set if player has access to emergency frequencies   | bool         |
+| Export                          | Description                                                 | Parameter(s)  |
+| ------------------------------- | ----------------------------------------------------------- | ------------- |
+| SetRadioEnabled                 | Set if the radio is enabled or not                          | bool          |
+| SetRadio                        | Set if player has a radio or not                            | bool          |
+| SetAllowRadioWhenClosed         | Allow player to broadcast when closed                       | bool          |
+| AddPrivateFrequency             | Make a frequency private                                    | int           |
+| RemovePrivateFrequency          | Make a private frequency public                             | int           |
+| GivePlayerAccessToFrequency     | Give a player access to use a private frequency             | int           |
+| RemovePlayerAccessToFrequency   | Remove a players access to use a private frequency          | int           |
+| GivePlayerAccessToFrequencies   | Give a player access to use multiple private frequencies    | int, int, ... |
+| RemovePlayerAccessToFrequencies | Remove a players access to use multiple private frequencies | int, int, ... |
 
 ### Commands
 
@@ -37,4 +42,4 @@ Setters
 
 ### Preview
 
-[![Image from Gyazo](https://i.gyazo.com/798085b3fae66bd2452b8844a10375b4.gif)](https://gyazo.com/798085b3fae66bd2452b8844a10375b4)
+![](https://imgur.com/bAT0mls)
