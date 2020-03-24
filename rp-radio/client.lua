@@ -20,56 +20,11 @@ local Radio = {
         "cellphone_call_listen_a",
         "generic_radio_chatter",
     },
-    Controls = {
-        Activator = { -- Open/Close Radio
-            Name = "INPUT_REPLAY_START_STOP_RECORDING_SECONDARY", -- Control name
-            Key = 289, -- F2
-        },
-        Secondary = {
-            Name = "INPUT_SPRINT",
-            Key = 21, -- Left Shift
-            Enabled = true, -- Require secondary to be pressed to open radio with Activator
-        },
-        Toggle = { -- Toggle radio on/off
-            Name = "INPUT_CONTEXT", -- Control name
-            Key = 51, -- E
-        },
-        Increase = { -- Increase Frequency
-            Name = "INPUT_CELLPHONE_RIGHT", -- Control name
-            Key = 175, -- Right Arrow
-            Pressed = false,
-        },
-        Decrease = { -- Decrease Frequency
-            Name = "INPUT_CELLPHONE_LEFT", -- Control name
-            Key = 174, -- Left Arrow
-            Pressed = false,
-        },
-        Input = { -- Choose Frequency
-            Name = "INPUT_FRONTEND_ACCEPT", -- Control name
-            Key = 201, -- Enter
-            Pressed = false,
-        },
-        Broadcast = {
-            Name = "INPUT_VEH_PUSHBIKE_SPRINT", -- Control name
-            Key = 137, -- Caps Lock
-        },
-        ToggleClicks = {
-            Name = "INPUT_SELECT_WEAPON", -- Control name
-            Key = 37, -- Tab
-        }
-    },
-    Frequency = {
-        Private = 4, -- Number of private frequencies for emergency services
-        Current = 1,
-        Min = 0,
-        Max = 800, -- Number of freqencies
-        Emergency = false,
-    },
     Clicks = true, -- Radio clicks
 }
 Radio.Labels = {        
-    { "FRZL_RADIO_HELP", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~~" .. Radio.Controls.ToggleClicks.Name .. "~ to ~a~ mic clicks~n~Frequency: ~1~ MHz" },
-    { "FRZL_RADIO_HELP2", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP", "~s~" .. (radioConfig.Controls.Secondary.Enabled and "~" .. radioConfig.Controls.Secondary.Name .. "~ + ~" .. radioConfig.Controls.Activator.Name .. "~" or "~" .. radioConfig.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. radioConfig.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~~" .. radioConfig.Controls.Decrease.Name .. "~ or ~" .. radioConfig.Controls.Increase.Name .. "~ to switch frequency~n~~" .. radioConfig.Controls.Input.Name .. "~ to choose frequency~n~~" .. radioConfig.Controls.ToggleClicks.Name .. "~ to ~a~ mic clicks~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP2", "~s~" .. (radioConfig.Controls.Secondary.Enabled and "~" .. radioConfig.Controls.Secondary.Name .. "~ + ~" .. radioConfig.Controls.Activator.Name .. "~" or "~" .. radioConfig.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. radioConfig.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~~" .. radioConfig.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
 Radio.Commands = {
@@ -107,16 +62,30 @@ Radio.Commands = {
                 if args[1] then
                     local newFrequency = tonumber(args[1])
                     if newFrequency then
-                        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
-                        if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.Max and newFrequency == math.floor(newFrequency) then
-                            if Radio.Enabled then
-                                Radio:Remove()
-                            end
+                        local minFrequency = radioConfig.Frequency.List[1]
+                        if newFrequency >= minFrequency and newFrequency <= radioConfig.Frequency.List[#radioConfig.Frequency.List] and newFrequency == math.floor(newFrequency) then
+                            if not radioConfig.Frequency.Private[newFrequency] or radioConfig.Frequency.Access[newFrequency] then
+                                local idx = nil
+                    
+                                for i = 1, #radioConfig.Frequency.List do
+                                    if radioConfig.Frequency.List[i] == newFrequency then
+                                        idx = i
+                                        break
+                                    end
+                                end
+                    
+                                if idx ~= nil then
+                                    if Radio.Enabled then
+                                        Radio:Remove()
+                                    end
 
-                            Radio.Frequency.Current = newFrequency
-                            
-                            if Radio.On then
-                                Radio:Add(Radio.Frequency.Current)
+                                    radioConfig.Frequency.CurrentIndex = idx
+                                    radioConfig.Frequency.Current = newFrequency
+
+                                    if Radio.On then
+                                        Radio:Add(radioConfig.Frequency.Current)
+                                    end
+                                end
                             end
                         end
                     end
@@ -161,7 +130,7 @@ function Radio:Toggle(toggle)
 
     self.Open = toggle
 
-    if self.On and not self.Frequency.Emergency then
+    if self.On and not radioConfig.AllowRadioWhenClosed then
         exports["mumble-voip"]:SetMumbleProperty("radioEnabled", toggle)
     end
 
@@ -223,43 +192,79 @@ function Radio:Remove()
 end
 
 -- Increase radio frequency
-function Radio:Decrease(min)
+function Radio:Decrease()
     if self.On then
-        if self.Frequency.Current - 1 < min then
-            self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Max
-            self:Add(self.Frequency.Current)        
+        if radioConfig.Frequency.CurrentIndex - 1 < 1 and radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex] == radioConfig.Frequency.Current then
+            self:Remove(radioConfig.Frequency.Current)
+            radioConfig.Frequency.CurrentIndex = #radioConfig.Frequency.List
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+            self:Add(radioConfig.Frequency.Current)
+        elseif radioConfig.Frequency.CurrentIndex - 1 < 1 and radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex] ~= radioConfig.Frequency.Current then
+            self:Remove(radioConfig.Frequency.Current)
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+            self:Add(radioConfig.Frequency.Current)
         else
-            self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Current - 1
-            self:Add(self.Frequency.Current)
+            self:Remove(radioConfig.Frequency.Current)
+            radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex - 1
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+            self:Add(radioConfig.Frequency.Current)
         end
     else
-        if self.Frequency.Current - 1 < min then
-            self.Frequency.Current = self.Frequency.Max
+        if radioConfig.Frequency.CurrentIndex - 1 < 1 and radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex] == radioConfig.Frequency.Current then
+            radioConfig.Frequency.CurrentIndex = #radioConfig.Frequency.List
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+        elseif radioConfig.Frequency.CurrentIndex - 1 < 1 and radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex] ~= radioConfig.Frequency.Current then
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
         else
-            self.Frequency.Current = self.Frequency.Current - 1
+            radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex - 1
+
+            if radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex] == radioConfig.Frequency.Current then
+                radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex - 1
+            end
+
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
         end
     end
 end
 
 -- Decrease radio frequency
-function Radio:Increase(min)
+function Radio:Increase()
     if self.On then
-        if self.Frequency.Current + 1 > self.Frequency.Max then
-            self:Remove(self.Frequency.Current)
-            self.Frequency.Current = min
-            self:Add(min)
+        if radioConfig.Frequency.CurrentIndex + 1 > #radioConfig.Frequency.List then
+            self:Remove(radioConfig.Frequency.Current)
+            radioConfig.Frequency.CurrentIndex = 1
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+            self:Add(radioConfig.Frequency.Current)
         else
-            self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Current + 1
-            self:Add(self.Frequency.Current)
+            self:Remove(radioConfig.Frequency.Current)
+            radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex + 1
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+            self:Add(radioConfig.Frequency.Current)
         end
     else
-        if self.Frequency.Current + 1 > self.Frequency.Max then
-            self.Frequency.Current = min
+        if #radioConfig.Frequency.List == radioConfig.Frequency.CurrentIndex + 1 then            
+            if radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex + 1] == radioConfig.Frequency.Current then
+                radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex + 1
+            end
+        end
+        
+        if radioConfig.Frequency.CurrentIndex + 1 > #radioConfig.Frequency.List then
+            radioConfig.Frequency.CurrentIndex = 1
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
         else
-            self.Frequency.Current = self.Frequency.Current + 1
+            radioConfig.Frequency.CurrentIndex = radioConfig.Frequency.CurrentIndex + 1
+            radioConfig.Frequency.Current = radioConfig.Frequency.List[radioConfig.Frequency.CurrentIndex]
+        end
+    end
+end
+
+-- Generate list of available frequencies
+function GenerateFrequencyList()
+    radioConfig.Frequency.List = {}
+
+    for i = radioConfig.Frequency.Min, radioConfig.Frequency.Max do
+        if not radioConfig.Frequency.Private[i] or radioConfig.Frequency.Access[i] then
+            radioConfig.Frequency.List[#radioConfig.Frequency.List + 1] = i
         end
     end
 end
@@ -299,18 +304,117 @@ function SetRadio(value)
     Radio.Has = value
 end
 
--- Set if player has access to emergency frequencies
-function SetEmergency(value)
-    Radio.Frequency.Emergency = value
+-- Set if player has access to use the radio when closed
+function SetAllowRadioWhenClosed(value)
+    radioConfig.Frequency.AllowRadioWhenClosed = value
 
-    if Radio.On and not Radio.Open and Radio.Frequency.Emergency then
+    if Radio.On and not Radio.Open and radioConfig.AllowRadioWhenClosed then
         exports["mumble-voip"]:SetMumbleProperty("radioEnabled", true)
     end
 end
 
--- Check if player has access to emergency frequencies
-function IsEmergency()
-    return Radio.Frequency.Emergency
+-- Add new frequency
+function AddPrivateFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if not radioConfig.Frequency.Private[frequency] then -- Only add new frequencies
+            radioConfig.Frequency.Private[frequency] = true
+
+            GenerateFrequencyList()
+        end
+    end
+end
+
+-- Remove private frequency
+function RemovePrivateFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if radioConfig.Frequency.Private[frequency] then -- Only remove existing frequencies
+            radioConfig.Frequency.Private[frequency] = nil
+
+            GenerateFrequencyList()
+        end
+    end
+end
+
+-- Give access to a frequency
+function GivePlayerAccessToFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if radioConfig.Frequency.Private[frequency] then -- Check if frequency exists
+            if not radioConfig.Frequency.Access[frequency] then -- Only add new frequencies
+                radioConfig.Frequency.Access[frequency] = true
+
+                GenerateFrequencyList()
+            end
+        end
+    end 
+end
+
+-- Remove access to a frequency
+function RemovePlayerAccessToFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if radioConfig.Frequency.Access[frequency] then -- Check if player has access to frequency
+            radioConfig.Frequency.Access[frequency] = nil
+
+            GenerateFrequencyList()
+        end
+    end 
+end
+
+-- Give access to multiple frequencies
+function GivePlayerAccessToFrequencies(...)
+    local frequencies = { ... }
+    local newFrequencies = {}
+    
+    for i = 1, #frequencies do
+        local frequency = tonumber(frequencies[i])
+
+        if frequency ~= nil then
+            if radioConfig.Frequency.Private[frequency] then -- Check if frequency exists
+                if not radioConfig.Frequency.Access[frequency] then -- Only add new frequencies
+                    newFrequencies[#newFrequencies + 1] = frequency
+                end
+            end
+        end
+    end
+
+    if #newFrequencies > 0 then
+        for i = 1, #newFrequencies do
+            radioConfig.Frequency.Access[newFrequencies[i]] = true
+        end
+
+        GenerateFrequencyList()
+    end
+end
+
+-- Remove access to multiple frequencies
+function RemovePlayerAccessToFrequencies(...)
+    local frequencies = { ... }
+    local removedFrequencies = {}
+
+    for i = 1, #frequencies do
+        local frequency = tonumber(frequencies[i])
+
+        if frequency ~= nil then
+            if radioConfig.Frequency.Access[frequency] then -- Check if player has access to frequency
+                removedFrequencies[#removedFrequencies + 1] = frequency
+            end
+        end
+    end
+
+    if #removedFrequencies > 0 then
+        for i = 1, #removedFrequencies do
+            radioConfig.Frequency.Access[removedFrequencies[i]] = nil
+        end
+
+        GenerateFrequencyList()
+    end
 end
 
 -- Define exports
@@ -321,8 +425,13 @@ exports("IsRadioEnabled", IsRadioEnabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
 exports("SetRadioEnabled", SetRadioEnabled)
 exports("SetRadio", SetRadio)
-exports("SetEmergency", SetEmergency)
-exports("IsEmergency", IsEmergency)
+exports("SetAllowRadioWhenClosed", SetAllowRadioWhenClosed)
+exports("AddPrivateFrequency", AddPrivateFrequency)
+exports("RemovePrivateFrequency", RemovePrivateFrequency)
+exports("GivePlayerAccessToFrequency", GivePlayerAccessToFrequency)
+exports("RemovePlayerAccessToFrequency", RemovePlayerAccessToFrequency)
+exports("GivePlayerAccessToFrequencies", GivePlayerAccessToFrequencies)
+exports("RemovePlayerAccessToFrequencies", RemovePlayerAccessToFrequencies)
 
 Citizen.CreateThread(function()
     -- Add Labels
@@ -330,19 +439,21 @@ Citizen.CreateThread(function()
         AddTextEntry(Radio.Labels[i][1], Radio.Labels[i][2])
     end
 
+    GenerateFrequencyList()
+
     while true do
         Citizen.Wait(0)
         -- Init local vars
         local playerPed = PlayerPedId()
-        local isActivatorPressed = IsControlJustPressed(0, Radio.Controls.Activator.Key)
-        local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
+        local isActivatorPressed = IsControlJustPressed(0, radioConfig.Controls.Activator.Key)
+        local isSecondaryPressed = (radioConfig.Controls.Secondary.Enabled and IsControlPressed(0, radioConfig.Controls.Secondary.Key) or true)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
-        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
-        local broadcastType = 3 + (Radio.Frequency.Emergency and 1 or 0) + ((Radio.Open and Radio.Frequency.Emergency) and -1 or 0) 
+        local minFrequency = radioConfig.Frequency.List[1]
+        local broadcastType = 3 + (radioConfig.AllowRadioWhenClosed and 1 or 0) + ((Radio.Open and radioConfig.AllowRadioWhenClosed) and -1 or 0)
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
-        local isBroadcasting = IsControlPressed(0, Radio.Controls.Broadcast.Key)
+        local isBroadcasting = IsControlPressed(0, radioConfig.Controls.Broadcast.Key)
         local isPlayingBroadcastAnim = IsEntityPlayingAnim(playerPed, broadcastDictionary, broadcastAnimation, 3)
 
         -- Open radio settings
@@ -356,14 +467,13 @@ Citizen.CreateThread(function()
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
-
-        -- Remove player from emergency services comms if not part of the emergency services
-        if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
+        
+        -- Remove player from private frequency that they don't have access to
+        if not radioConfig.Frequency.Access[radioConfig.Frequency.Current] and radioConfig.Frequency.Private[radioConfig.Frequency.Current] then
             Radio:Remove()
-            Radio.Frequency.Current = minFrequency
-            Radio:Add(Radio.Frequency.Current)
-        elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
-            Radio.Frequency.Current = minFrequency
+            radioConfig.Frequency.CurrentIndex = 1
+            radioConfig.Frequency.Current = minFrequency
+            Radio:Add(radioConfig.Frequency.Current)
         end
 
         -- Check if player is holding radio
@@ -386,7 +496,7 @@ Citizen.CreateThread(function()
                 AddTextComponentSubstringPlayerName(Radio.Clicks and "~r~disable~w~" or "~g~enable~w~")
             end
 
-            AddTextComponentInteger(Radio.Frequency.Current)
+            AddTextComponentInteger(radioConfig.Frequency.Current)
             EndTextCommandDisplayHelp(false, false, false, -1)
 
             -- Play animation if player is broadcasting to radio
@@ -416,14 +526,14 @@ Citizen.CreateThread(function()
             end
 
             -- Turn radio on/off
-            if IsControlJustPressed(0, Radio.Controls.Toggle.Key) then
+            if IsControlJustPressed(0, radioConfig.Controls.Toggle.Key) then
                 Radio.On = not Radio.On
 
                 exports["mumble-voip"]:SetMumbleProperty("radioEnabled", Radio.On)
 
                 if Radio.On then
                     SendNUIMessage({ sound = "audio_on", volume = 0.3})
-                    Radio:Add(Radio.Frequency.Current)
+                    Radio:Add(radioConfig.Frequency.Current)
                 else
                     SendNUIMessage({ sound = "audio_off", volume = 0.5})
                     Radio:Remove()
@@ -432,41 +542,41 @@ Citizen.CreateThread(function()
 
             -- Change radio frequency
             if not Radio.On then
-                DisableControlAction(0, Radio.Controls.ToggleClicks.Key, false)
+                DisableControlAction(0, radioConfig.Controls.ToggleClicks.Key, false)
 
-                if not Radio.Controls.Decrease.Pressed then
-                    if IsControlJustPressed(0, Radio.Controls.Decrease.Key) then
-                        Radio.Controls.Decrease.Pressed = true
+                if not radioConfig.Controls.Decrease.Pressed then
+                    if IsControlJustPressed(0, radioConfig.Controls.Decrease.Key) then
+                        radioConfig.Controls.Decrease.Pressed = true
                         Citizen.CreateThread(function()
-                            while IsControlPressed(0, Radio.Controls.Decrease.Key) do
-                                Radio:Decrease(minFrequency)
+                            while IsControlPressed(0, radioConfig.Controls.Decrease.Key) do
+                                Radio:Decrease()
                                 Citizen.Wait(125)
                             end
 
-                            Radio.Controls.Decrease.Pressed = false
+                            radioConfig.Controls.Decrease.Pressed = false
                         end)
                     end
                 end
 
-                if not Radio.Controls.Increase.Pressed then
-                    if IsControlJustPressed(0, Radio.Controls.Increase.Key) then
-                        Radio.Controls.Increase.Pressed = true
+                if not radioConfig.Controls.Increase.Pressed then
+                    if IsControlJustPressed(0, radioConfig.Controls.Increase.Key) then
+                        radioConfig.Controls.Increase.Pressed = true
                         Citizen.CreateThread(function()
-                            while IsControlPressed(0, Radio.Controls.Increase.Key) do
-                                Radio:Increase(minFrequency)
+                            while IsControlPressed(0, radioConfig.Controls.Increase.Key) do
+                                Radio:Increase()
                                 Citizen.Wait(125)
                             end
 
-                            Radio.Controls.Increase.Pressed = false
+                            radioConfig.Controls.Increase.Pressed = false
                         end)
                     end
                 end
 
-                if not Radio.Controls.Input.Pressed then
-                    if IsControlJustPressed(0, Radio.Controls.Input.Key) then
-                        Radio.Controls.Input.Pressed = true
+                if not radioConfig.Controls.Input.Pressed then
+                    if IsControlJustPressed(0, radioConfig.Controls.Input.Key) then
+                        radioConfig.Controls.Input.Pressed = true
                         Citizen.CreateThread(function()
-                            DisplayOnscreenKeyboard(1, Radio.Labels[3][1], "", Radio.Frequency.Current, "", "", "", 3)
+                            DisplayOnscreenKeyboard(1, Radio.Labels[3][1], "", radioConfig.Frequency.Current, "", "", "", 3)
 
                             while UpdateOnscreenKeyboard() ~= 1 and UpdateOnscreenKeyboard() ~= 2 do
                                 Citizen.Wait(150)
@@ -483,18 +593,32 @@ Citizen.CreateThread(function()
                             input = tonumber(input)
 
                             if input ~= nil then
-                                if input >= minFrequency and input <= Radio.Frequency.Max and input == math.floor(input) then
-                                    Radio.Frequency.Current = input
+                                if input >= minFrequency and input <= radioConfig.Frequency.List[#radioConfig.Frequency.List] and input == math.floor(input) then
+                                    if not radioConfig.Frequency.Private[input] or radioConfig.Frequency.Access[input] then
+                                        local idx = nil
+
+                                        for i = 1, #radioConfig.Frequency.List do
+                                            if radioConfig.Frequency.List[i] == input then
+                                                idx = i
+                                                break
+                                            end
+                                        end
+
+                                        if idx ~= nil then
+                                            radioConfig.Frequency.CurrentIndex = idx
+                                            radioConfig.Frequency.Current = input
+                                        end
+                                    end
                                 end
                             end
                             
-                            Radio.Controls.Input.Pressed = false
+                            radioConfig.Controls.Input.Pressed = false
                         end)
                     end
                 end
                 
                 -- Turn radio mic clicks on/off
-                if IsDisabledControlJustPressed(0, Radio.Controls.ToggleClicks.Key) then
+                if IsDisabledControlJustPressed(0, radioConfig.Controls.ToggleClicks.Key) then
                     Radio.Clicks = not Radio.Clicks
 
                     SendNUIMessage({ sound = "audio_off", volume = 0.5})
@@ -504,7 +628,7 @@ Citizen.CreateThread(function()
             end
         else
             -- Play emergency services radio animation
-            if Radio.Frequency.Emergency then
+            if radioConfig.AllowRadioWhenClosed then
                 if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim then
                     RequestAnimDict(broadcastDictionary)
     
@@ -525,7 +649,7 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
 		if NetworkIsSessionStarted() then
-            exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
+            exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", radioConfig.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
             exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false) -- Disable radio control
 			return
 		end
