@@ -497,6 +497,8 @@ Citizen.CreateThread(function()
                 if IsDisabledControlJustPressed(0, Radio.Controls.ToggleClicks.Key) then
                     Radio.Clicks = not Radio.Clicks
 
+                    SendNUIMessage({ sound = "audio_off", volume = 0.5})
+                    
                     exports["mumble-voip"]:SetMumbleProperty("radioClicks", Radio.Clicks)
                 end
             end
