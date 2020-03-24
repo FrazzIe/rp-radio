@@ -1,5 +1,5 @@
 local Radio = {
-    Has = false,
+    Has = true,
     Open = false,
     On = false,
     Enabled = true,
@@ -21,7 +21,7 @@ local Radio = {
         "generic_radio_chatter",
     },
     Controls = {
-        Activator = {
+        Activator = { -- Open/Close Radio
             Name = "INPUT_REPLAY_START_STOP_RECORDING_SECONDARY", -- Control name
             Key = 289, -- F2
         },
@@ -30,21 +30,21 @@ local Radio = {
             Key = 21, -- Left Shift
             Enabled = true, -- Require secondary to be pressed to open radio with Activator
         },
-        Toggle = {
+        Toggle = { -- Toggle radio on/off
             Name = "INPUT_CONTEXT", -- Control name
             Key = 51, -- E
         },
-        Increase = {
+        Increase = { -- Increase Frequency
             Name = "INPUT_CELLPHONE_RIGHT", -- Control name
             Key = 175, -- Right Arrow
             Pressed = false,
         },
-        Decrease = {
+        Decrease = { -- Decrease Frequency
             Name = "INPUT_CELLPHONE_LEFT", -- Control name
             Key = 174, -- Left Arrow
             Pressed = false,
         },
-        Input = {
+        Input = { -- Choose Frequency
             Name = "INPUT_FRONTEND_ACCEPT", -- Control name
             Key = 201, -- Enter
             Pressed = false,
@@ -53,6 +53,10 @@ local Radio = {
             Name = "INPUT_VEH_PUSHBIKE_SPRINT", -- Control name
             Key = 137, -- Caps Lock
         },
+        ToggleClicks = {
+            Name = "INPUT_SELECT_WEAPON", -- Control name
+            Key = 37, -- Tab
+        }
     },
     Frequency = {
         Private = 4, -- Number of private frequencies for emergency services
@@ -61,10 +65,11 @@ local Radio = {
         Max = 800, -- Number of freqencies
         Emergency = false,
     },
+    Clicks = true, -- Radio clicks
 }
 Radio.Labels = {        
-    { "FRZL_RADIO_HELP", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~Press ~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~Press ~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~Frequency: ~1~ MHz" },
-    { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~~" .. Radio.Controls.ToggleClicks.Name .. "~ to ~a~ mic clicks~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP2", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
 Radio.Commands = {
@@ -376,6 +381,11 @@ Citizen.CreateThread(function()
 
             -- Display help text
             BeginTextCommandDisplayHelp(Radio.Labels[Radio.On and 2 or 1][1])
+
+            if not Radio.On then
+                AddTextComponentSubstringPlayerName(Radio.Clicks and "~r~disable~w~" or "~g~enable~w~")
+            end
+
             AddTextComponentInteger(Radio.Frequency.Current)
             EndTextCommandDisplayHelp(false, false, false, -1)
 
@@ -422,6 +432,8 @@ Citizen.CreateThread(function()
 
             -- Change radio frequency
             if not Radio.On then
+                DisableControlAction(0, Radio.Controls.ToggleClicks.Key, false)
+
                 if not Radio.Controls.Decrease.Pressed then
                     if IsControlJustPressed(0, Radio.Controls.Decrease.Key) then
                         Radio.Controls.Decrease.Pressed = true
@@ -479,6 +491,13 @@ Citizen.CreateThread(function()
                             Radio.Controls.Input.Pressed = false
                         end)
                     end
+                end
+                
+                -- Turn radio mic clicks on/off
+                if IsDisabledControlJustPressed(0, Radio.Controls.ToggleClicks.Key) then
+                    Radio.Clicks = not Radio.Clicks
+
+                    exports["mumble-voip"]:SetMumbleProperty("radioClicks", Radio.Clicks)
                 end
             end
         else
