@@ -59,13 +59,18 @@ local Radio = {
         }
     },
     Frequency = {
-        Private = 4, -- Number of private frequencies for emergency services
+        Private = {
+            [1] = true, -- Make 1 a private frequency
+        }, -- List of private frequencies
         Current = 1,
-        Min = 0,
+        CurrentIndex = 1,
+        Min = 1,
         Max = 800, -- Number of freqencies
-        Emergency = false,
+        List = {}, -- Frequency list
+        Access = {}, -- List of freqencies a player has access to
     },
     Clicks = true, -- Radio clicks
+    AllowRadioWhenClosed = false -- Allows the radio to be used when not open (uses police radio animation) 
 }
 Radio.Labels = {        
     { "FRZL_RADIO_HELP", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~~" .. Radio.Controls.ToggleClicks.Name .. "~ to ~a~ mic clicks~n~Frequency: ~1~ MHz" },
@@ -107,16 +112,30 @@ Radio.Commands = {
                 if args[1] then
                     local newFrequency = tonumber(args[1])
                     if newFrequency then
-                        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
-                        if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.Max and newFrequency == math.floor(newFrequency) then
-                            if Radio.Enabled then
-                                Radio:Remove()
-                            end
+                        local minFrequency = Radio.Frequency.List[1]
+                        if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.List[#Radio.Frequency.List] and newFrequency == math.floor(newFrequency) then
+                            if not Radio.Frequency.Private[newFrequency] or Radio.Frequency.Access[newFrequency] then
+                                local idx = nil
+                    
+                                for i = 1, #Radio.Frequency.List do
+                                    if Radio.Frequency.List[i] == newFrequency then
+                                        idx = i
+                                        break
+                                    end
+                                end
+                    
+                                if idx ~= nil then
+                                    if Radio.Enabled then
+                                        Radio:Remove()
+                                    end
 
-                            Radio.Frequency.Current = newFrequency
-                            
-                            if Radio.On then
-                                Radio:Add(Radio.Frequency.Current)
+                                    Radio.Frequency.CurrentIndex = idx
+                                    Radio.Frequency.Current = newFrequency
+
+                                    if Radio.On then
+                                        Radio:Add(Radio.Frequency.Current)
+                                    end
+                                end
                             end
                         end
                     end
@@ -161,7 +180,7 @@ function Radio:Toggle(toggle)
 
     self.Open = toggle
 
-    if self.On and not self.Frequency.Emergency then
+    if self.On and not self.AllowRadioWhenClosed then
         exports["mumble-voip"]:SetMumbleProperty("radioEnabled", toggle)
     end
 
@@ -223,43 +242,79 @@ function Radio:Remove()
 end
 
 -- Increase radio frequency
-function Radio:Decrease(min)
+function Radio:Decrease()
     if self.On then
-        if self.Frequency.Current - 1 < min then
+        if self.Frequency.CurrentIndex - 1 < 1 and self.Frequency.List[self.Frequency.CurrentIndex] == self.Frequency.Current then
             self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Max
-            self:Add(self.Frequency.Current)        
+            self.Frequency.CurrentIndex = #self.Frequency.List
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
+            self:Add(self.Frequency.Current)
+        elseif self.Frequency.CurrentIndex - 1 < 1 and self.Frequency.List[self.Frequency.CurrentIndex] ~= self.Frequency.Current then
+            self:Remove(self.Frequency.Current)
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
+            self:Add(self.Frequency.Current)
         else
             self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Current - 1
+            self.Frequency.CurrentIndex = self.Frequency.CurrentIndex - 1
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
             self:Add(self.Frequency.Current)
         end
     else
-        if self.Frequency.Current - 1 < min then
-            self.Frequency.Current = self.Frequency.Max
+        if self.Frequency.CurrentIndex - 1 < 1 and self.Frequency.List[self.Frequency.CurrentIndex] == self.Frequency.Current then
+            self.Frequency.CurrentIndex = #self.Frequency.List
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
+        elseif self.Frequency.CurrentIndex - 1 < 1 and self.Frequency.List[self.Frequency.CurrentIndex] ~= self.Frequency.Current then
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
         else
-            self.Frequency.Current = self.Frequency.Current - 1
+            self.Frequency.CurrentIndex = self.Frequency.CurrentIndex - 1
+
+            if self.Frequency.List[self.Frequency.CurrentIndex] == self.Frequency.Current then
+                self.Frequency.CurrentIndex = self.Frequency.CurrentIndex - 1
+            end
+
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
         end
     end
 end
 
 -- Decrease radio frequency
-function Radio:Increase(min)
+function Radio:Increase()
     if self.On then
-        if self.Frequency.Current + 1 > self.Frequency.Max then
+        if self.Frequency.CurrentIndex + 1 > #self.Frequency.List then
             self:Remove(self.Frequency.Current)
-            self.Frequency.Current = min
-            self:Add(min)
+            self.Frequency.CurrentIndex = 1
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
+            self:Add(self.Frequency.Current)
         else
             self:Remove(self.Frequency.Current)
-            self.Frequency.Current = self.Frequency.Current + 1
+            self.Frequency.CurrentIndex = self.Frequency.CurrentIndex + 1
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
             self:Add(self.Frequency.Current)
         end
     else
-        if self.Frequency.Current + 1 > self.Frequency.Max then
-            self.Frequency.Current = min
+        if #self.Frequency.List == self.Frequency.CurrentIndex + 1 then            
+            if self.Frequency.List[self.Frequency.CurrentIndex + 1] == self.Frequency.Current then
+                self.Frequency.CurrentIndex = self.Frequency.CurrentIndex + 1
+            end
+        end
+        
+        if self.Frequency.CurrentIndex + 1 > #self.Frequency.List then
+            self.Frequency.CurrentIndex = 1
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
         else
-            self.Frequency.Current = self.Frequency.Current + 1
+            self.Frequency.CurrentIndex = self.Frequency.CurrentIndex + 1
+            self.Frequency.Current = self.Frequency.List[self.Frequency.CurrentIndex]
+        end
+    end
+end
+
+-- Generate list of available frequencies
+function GenerateFrequencyList()
+    Radio.Frequency.List = {}
+
+    for i = Radio.Frequency.Min, Radio.Frequency.Max do
+        if not Radio.Frequency.Private[i] or Radio.Frequency.Access[i] then
+            Radio.Frequency.List[#Radio.Frequency.List + 1] = i
         end
     end
 end
@@ -299,18 +354,117 @@ function SetRadio(value)
     Radio.Has = value
 end
 
--- Set if player has access to emergency frequencies
-function SetEmergency(value)
-    Radio.Frequency.Emergency = value
+-- Set if player has access to use the radio when closed
+function SetAllowRadioWhenClosed(value)
+    Radio.Frequency.AllowRadioWhenClosed = value
 
-    if Radio.On and not Radio.Open and Radio.Frequency.Emergency then
+    if Radio.On and not Radio.Open and Radio.AllowRadioWhenClosed then
         exports["mumble-voip"]:SetMumbleProperty("radioEnabled", true)
     end
 end
 
--- Check if player has access to emergency frequencies
-function IsEmergency()
-    return Radio.Frequency.Emergency
+-- Add new frequency
+function AddPrivateFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if not Radio.Frequency.Private[frequency] then -- Only add new frequencies
+            Radio.Frequency.Private[frequency] = true
+
+            GenerateFrequencyList()
+        end
+    end
+end
+
+-- Remove private frequency
+function RemovePrivateFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if Radio.Frequency.Private[frequency] then -- Only remove existing frequencies
+            Radio.Frequency.Private[frequency] = nil
+
+            GenerateFrequencyList()
+        end
+    end
+end
+
+-- Give access to a frequency
+function GivePlayerAccessToFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if Radio.Frequency.Private[frequency] then -- Check if frequency exists
+            if not Radio.Frequency.Access[frequency] then -- Only add new frequencies
+                Radio.Frequency.Access[frequency] = true
+
+                GenerateFrequencyList()
+            end
+        end
+    end 
+end
+
+-- Remove access to a frequency
+function RemovePlayerAccessToFrequency(value)
+    local frequency = tonumber(value)
+
+    if frequency ~= nil then
+        if Radio.Frequency.Access[frequency] then -- Check if player has access to frequency
+            Radio.Frequency.Access[frequency] = nil
+
+            GenerateFrequencyList()
+        end
+    end 
+end
+
+-- Give access to multiple frequencies
+function GivePlayerAccessToFrequencies(...)
+    local frequencies = { ... }
+    local newFrequencies = {}
+    
+    for i = 1, #frequencies do
+        local frequency = tonumber(frequencies[i])
+
+        if frequency ~= nil then
+            if Radio.Frequency.Private[frequency] then -- Check if frequency exists
+                if not Radio.Frequency.Access[frequency] then -- Only add new frequencies
+                    newFrequencies[#newFrequencies + 1] = frequency
+                end
+            end
+        end
+    end
+
+    if #newFrequencies > 0 then
+        for i = 1, #newFrequencies do
+            Radio.Frequency.Access[newFrequencies[i]] = true
+        end
+
+        GenerateFrequencyList()
+    end
+end
+
+-- Remove access to multiple frequencies
+function RemovePlayerAccessToFrequencies(...)
+    local frequencies = { ... }
+    local removedFrequencies = {}
+
+    for i = 1, #frequencies do
+        local frequency = tonumber(frequencies[i])
+
+        if frequency ~= nil then
+            if Radio.Frequency.Access[frequency] then -- Check if player has access to frequency
+                removedFrequencies[#removedFrequencies + 1] = frequency
+            end
+        end
+    end
+
+    if #removedFrequencies > 0 then
+        for i = 1, #removedFrequencies do
+            Radio.Frequency.Access[removedFrequencies[i]] = nil
+        end
+
+        GenerateFrequencyList()
+    end
 end
 
 -- Define exports
@@ -321,14 +475,21 @@ exports("IsRadioEnabled", IsRadioEnabled)
 exports("CanRadioBeUsed", CanRadioBeUsed)
 exports("SetRadioEnabled", SetRadioEnabled)
 exports("SetRadio", SetRadio)
-exports("SetEmergency", SetEmergency)
-exports("IsEmergency", IsEmergency)
+exports("SetAllowRadioWhenClosed", SetAllowRadioWhenClosed)
+exports("AddPrivateFrequency", AddPrivateFrequency)
+exports("RemovePrivateFrequency", RemovePrivateFrequency)
+exports("GivePlayerAccessToFrequency", GivePlayerAccessToFrequency)
+exports("RemovePlayerAccessToFrequency", RemovePlayerAccessToFrequency)
+exports("GivePlayerAccessToFrequencies", GivePlayerAccessToFrequencies)
+exports("RemovePlayerAccessToFrequencies", RemovePlayerAccessToFrequencies)
 
 Citizen.CreateThread(function()
     -- Add Labels
     for i = 1, #Radio.Labels do
         AddTextEntry(Radio.Labels[i][1], Radio.Labels[i][2])
     end
+
+    GenerateFrequencyList()
 
     while true do
         Citizen.Wait(0)
@@ -338,8 +499,8 @@ Citizen.CreateThread(function()
         local isSecondaryPressed = (Radio.Controls.Secondary.Enabled and IsControlPressed(0, Radio.Controls.Secondary.Key) or true)
         local isFalling = IsPedFalling(playerPed)
         local isDead = IsEntityDead(playerPed)
-        local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
-        local broadcastType = 3 + (Radio.Frequency.Emergency and 1 or 0) + ((Radio.Open and Radio.Frequency.Emergency) and -1 or 0) 
+        local minFrequency = Radio.Frequency.List[1]
+        local broadcastType = 3 + (Radio.AllowRadioWhenClosed and 1 or 0) + ((Radio.Open and Radio.AllowRadioWhenClosed) and -1 or 0)
         local broadcastDictionary = Radio.Dictionary[broadcastType]
         local broadcastAnimation = Radio.Animation[broadcastType]
         local isBroadcasting = IsControlPressed(0, Radio.Controls.Broadcast.Key)
@@ -356,14 +517,13 @@ Citizen.CreateThread(function()
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
-
-        -- Remove player from emergency services comms if not part of the emergency services
-        if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
+        
+        -- Remove player from private frequency that they don't have access to
+        if not Radio.Frequency.Access[Radio.Frequency.Current] and Radio.Frequency.Private[Radio.Frequency.Current] then
             Radio:Remove()
+            Radio.Frequency.CurrentIndex = 1
             Radio.Frequency.Current = minFrequency
             Radio:Add(Radio.Frequency.Current)
-        elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
-            Radio.Frequency.Current = minFrequency
         end
 
         -- Check if player is holding radio
@@ -439,7 +599,7 @@ Citizen.CreateThread(function()
                         Radio.Controls.Decrease.Pressed = true
                         Citizen.CreateThread(function()
                             while IsControlPressed(0, Radio.Controls.Decrease.Key) do
-                                Radio:Decrease(minFrequency)
+                                Radio:Decrease()
                                 Citizen.Wait(125)
                             end
 
@@ -453,7 +613,7 @@ Citizen.CreateThread(function()
                         Radio.Controls.Increase.Pressed = true
                         Citizen.CreateThread(function()
                             while IsControlPressed(0, Radio.Controls.Increase.Key) do
-                                Radio:Increase(minFrequency)
+                                Radio:Increase()
                                 Citizen.Wait(125)
                             end
 
@@ -483,8 +643,22 @@ Citizen.CreateThread(function()
                             input = tonumber(input)
 
                             if input ~= nil then
-                                if input >= minFrequency and input <= Radio.Frequency.Max and input == math.floor(input) then
-                                    Radio.Frequency.Current = input
+                                if input >= minFrequency and input <= Radio.Frequency.List[#Radio.Frequency.List] and input == math.floor(input) then
+                                    if not Radio.Frequency.Private[input] or Radio.Frequency.Access[input] then
+                                        local idx = nil
+
+                                        for i = 1, #Radio.Frequency.List do
+                                            if Radio.Frequency.List[i] == input then
+                                                idx = i
+                                                break
+                                            end
+                                        end
+
+                                        if idx ~= nil then
+                                            Radio.Frequency.CurrentIndex = idx
+                                            Radio.Frequency.Current = input
+                                        end
+                                    end
                                 end
                             end
                             
@@ -504,7 +678,7 @@ Citizen.CreateThread(function()
             end
         else
             -- Play emergency services radio animation
-            if Radio.Frequency.Emergency then
+            if Radio.AllowRadioWhenClosed then
                 if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim then
                     RequestAnimDict(broadcastDictionary)
     
