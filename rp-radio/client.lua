@@ -35,7 +35,7 @@ local Radio = {
             Key = 51, -- E
         },
         Increase = {
-            Name = "INPUT_CELLPHONE_Right", -- Control name
+            Name = "INPUT_CELLPHONE_RIGHT", -- Control name
             Key = 175, -- Right Arrow
             Pressed = false,
         },
@@ -83,8 +83,8 @@ Radio.Commands = {
             elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
                 Radio:Toggle(false)
                 Radio.On = false
-                Radio:Remove(Radio.Frequency.Current)
-                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
+                Radio:Remove()
+                exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false)
             elseif Radio.Open and isFalling then
                 Radio:Toggle(false)
             end            
@@ -105,7 +105,7 @@ Radio.Commands = {
                         local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
                         if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.Max and newFrequency == math.floor(newFrequency) then
                             if Radio.Enabled then
-                                Radio:Remove(Radio.Frequency.Current)
+                                Radio:Remove()
                             end
 
                             Radio.Frequency.Current = newFrequency
@@ -157,7 +157,7 @@ function Radio:Toggle(toggle)
     self.Open = toggle
 
     if self.On and not self.Frequency.Emergency then
-        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", toggle)
+        exports["mumble-voip"]:SetMumbleProperty("radioEnabled", toggle)
     end
 
     local dictionaryType = 1 + (IsPedInAnyVehicle(playerPed, false) and 1 or 0)
@@ -209,12 +209,12 @@ end
 
 -- Add player to radio channel
 function Radio:Add(id)
-    exports["tokovoip_script"]:addPlayerToRadio(id)
+    exports["mumble-voip"]:SetRadioChannel(id)
 end
 
 -- Remove player from radio channel
-function Radio:Remove(id)
-    exports["tokovoip_script"]:removePlayerFromRadio(id)
+function Radio:Remove()
+    exports["mumble-voip"]:SetRadioChannel(0)
 end
 
 -- Increase radio frequency
@@ -299,7 +299,7 @@ function SetEmergency(value)
     Radio.Frequency.Emergency = value
 
     if Radio.On and not Radio.Open and Radio.Frequency.Emergency then
-        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", true)
+        exports["mumble-voip"]:SetMumbleProperty("radioEnabled", true)
     end
 end
 
@@ -346,15 +346,15 @@ Citizen.CreateThread(function()
         elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
             Radio:Toggle(false)
             Radio.On = false
-            Radio:Remove(Radio.Frequency.Current)
-            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
+            Radio:Remove()
+            exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false)
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
         if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
-            Radio:Remove(Radio.Frequency.Current)
+            Radio:Remove()
             Radio.Frequency.Current = minFrequency
             Radio:Add(Radio.Frequency.Current)
         elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
@@ -409,14 +409,14 @@ Citizen.CreateThread(function()
             if IsControlJustPressed(0, Radio.Controls.Toggle.Key) then
                 Radio.On = not Radio.On
 
-                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", Radio.On)
+                exports["mumble-voip"]:SetMumbleProperty("radioEnabled", Radio.On)
 
                 if Radio.On then
                     SendNUIMessage({ sound = "audio_on", volume = 0.3})
                     Radio:Add(Radio.Frequency.Current)
                 else
                     SendNUIMessage({ sound = "audio_off", volume = 0.5})
-                    Radio:Remove(Radio.Frequency.Current)
+                    Radio:Remove()
                 end
             end
 
@@ -468,8 +468,9 @@ Citizen.CreateThread(function()
 
                             Citizen.Wait(500)
                             
+                            input = tonumber(input)
+
                             if input ~= nil then
-                                input = tonumber(input)
                                 if input >= minFrequency and input <= Radio.Frequency.Max and input == math.floor(input) then
                                     Radio.Frequency.Current = input
                                 end
@@ -503,9 +504,8 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
 		if NetworkIsSessionStarted() then
-            exports["tokovoip_script"]:SetTokoProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
-            exports["tokovoip_script"]:SetTokoProperty("radioAnim", false) -- Disable built-in toko radio animation
-            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false) -- Disable radio control
+            exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
+            exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false) -- Disable radio control
 			return
 		end
 	end

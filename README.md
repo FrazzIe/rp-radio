@@ -1,5 +1,5 @@
 # rp-radio
-An in-game radio which makes use of the TokoVOIP radio API for FiveM
+An in-game radio which makes use of the mumble-voip radio API for FiveM
 
 ### Exports
 Getters
