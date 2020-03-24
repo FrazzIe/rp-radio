@@ -1,5 +1,5 @@
 local Radio = {
-    Has = false,
+    Has = true,
     Open = false,
     On = false,
     Enabled = true,
@@ -21,7 +21,7 @@ local Radio = {
         "generic_radio_chatter",
     },
     Controls = {
-        Activator = {
+        Activator = { -- Open/Close Radio
             Name = "INPUT_REPLAY_START_STOP_RECORDING_SECONDARY", -- Control name
             Key = 289, -- F2
         },
@@ -30,21 +30,21 @@ local Radio = {
             Key = 21, -- Left Shift
             Enabled = true, -- Require secondary to be pressed to open radio with Activator
         },
-        Toggle = {
+        Toggle = { -- Toggle radio on/off
             Name = "INPUT_CONTEXT", -- Control name
             Key = 51, -- E
         },
-        Increase = {
-            Name = "INPUT_CELLPHONE_Right", -- Control name
+        Increase = { -- Increase Frequency
+            Name = "INPUT_CELLPHONE_RIGHT", -- Control name
             Key = 175, -- Right Arrow
             Pressed = false,
         },
-        Decrease = {
+        Decrease = { -- Decrease Frequency
             Name = "INPUT_CELLPHONE_LEFT", -- Control name
             Key = 174, -- Left Arrow
             Pressed = false,
         },
-        Input = {
+        Input = { -- Choose Frequency
             Name = "INPUT_FRONTEND_ACCEPT", -- Control name
             Key = 201, -- Enter
             Pressed = false,
@@ -53,6 +53,10 @@ local Radio = {
             Name = "INPUT_VEH_PUSHBIKE_SPRINT", -- Control name
             Key = 137, -- Caps Lock
         },
+        ToggleClicks = {
+            Name = "INPUT_SELECT_WEAPON", -- Control name
+            Key = 37, -- Tab
+        }
     },
     Frequency = {
         Private = 4, -- Number of private frequencies for emergency services
@@ -61,10 +65,11 @@ local Radio = {
         Max = 800, -- Number of freqencies
         Emergency = false,
     },
+    Clicks = true, -- Radio clicks
 }
 Radio.Labels = {        
-    { "FRZL_RADIO_HELP", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~Press ~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~Press ~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~Frequency: ~1~ MHz" },
-    { "FRZL_RADIO_HELP2", "~s~Press " .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~Press ~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~Press ~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~g~on~s~.~n~~" .. Radio.Controls.Decrease.Name .. "~ or ~" .. Radio.Controls.Increase.Name .. "~ to switch frequency~n~~" .. Radio.Controls.Input.Name .. "~ to choose frequency~n~~" .. Radio.Controls.ToggleClicks.Name .. "~ to ~a~ mic clicks~n~Frequency: ~1~ MHz" },
+    { "FRZL_RADIO_HELP2", "~s~" .. (Radio.Controls.Secondary.Enabled and "~" .. Radio.Controls.Secondary.Name .. "~ + ~" .. Radio.Controls.Activator.Name .. "~" or "~" .. Radio.Controls.Activator.Name .. "~") .. " to hide.~n~~" .. Radio.Controls.Toggle.Name .. "~ to turn radio ~r~off~s~.~n~~" .. Radio.Controls.Broadcast.Name .. "~ to broadcast.~n~Frequency: ~1~ MHz" },
     { "FRZL_RADIO_INPUT", "Enter Frequency" },
 }
 Radio.Commands = {
@@ -83,8 +88,8 @@ Radio.Commands = {
             elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
                 Radio:Toggle(false)
                 Radio.On = false
-                Radio:Remove(Radio.Frequency.Current)
-                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
+                Radio:Remove()
+                exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false)
             elseif Radio.Open and isFalling then
                 Radio:Toggle(false)
             end            
@@ -105,7 +110,7 @@ Radio.Commands = {
                         local minFrequency = Radio.Frequency.Min + (Radio.Frequency.Emergency and 1 or (Radio.Frequency.Private + 1))
                         if newFrequency >= minFrequency and newFrequency <= Radio.Frequency.Max and newFrequency == math.floor(newFrequency) then
                             if Radio.Enabled then
-                                Radio:Remove(Radio.Frequency.Current)
+                                Radio:Remove()
                             end
 
                             Radio.Frequency.Current = newFrequency
@@ -157,7 +162,7 @@ function Radio:Toggle(toggle)
     self.Open = toggle
 
     if self.On and not self.Frequency.Emergency then
-        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", toggle)
+        exports["mumble-voip"]:SetMumbleProperty("radioEnabled", toggle)
     end
 
     local dictionaryType = 1 + (IsPedInAnyVehicle(playerPed, false) and 1 or 0)
@@ -209,12 +214,12 @@ end
 
 -- Add player to radio channel
 function Radio:Add(id)
-    exports["tokovoip_script"]:addPlayerToRadio(id)
+    exports["mumble-voip"]:SetRadioChannel(id)
 end
 
 -- Remove player from radio channel
-function Radio:Remove(id)
-    exports["tokovoip_script"]:removePlayerFromRadio(id)
+function Radio:Remove()
+    exports["mumble-voip"]:SetRadioChannel(0)
 end
 
 -- Increase radio frequency
@@ -299,7 +304,7 @@ function SetEmergency(value)
     Radio.Frequency.Emergency = value
 
     if Radio.On and not Radio.Open and Radio.Frequency.Emergency then
-        exports["tokovoip_script"]:SetTokoProperty("radioEnabled", true)
+        exports["mumble-voip"]:SetMumbleProperty("radioEnabled", true)
     end
 end
 
@@ -346,15 +351,15 @@ Citizen.CreateThread(function()
         elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
             Radio:Toggle(false)
             Radio.On = false
-            Radio:Remove(Radio.Frequency.Current)
-            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false)
+            Radio:Remove()
+            exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false)
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
 
         -- Remove player from emergency services comms if not part of the emergency services
         if not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and Radio.On then
-            Radio:Remove(Radio.Frequency.Current)
+            Radio:Remove()
             Radio.Frequency.Current = minFrequency
             Radio:Add(Radio.Frequency.Current)
         elseif not Radio.Frequency.Emergency and Radio.Frequency.Current <= Radio.Frequency.Private and not Radio.On then
@@ -376,6 +381,11 @@ Citizen.CreateThread(function()
 
             -- Display help text
             BeginTextCommandDisplayHelp(Radio.Labels[Radio.On and 2 or 1][1])
+
+            if not Radio.On then
+                AddTextComponentSubstringPlayerName(Radio.Clicks and "~r~disable~w~" or "~g~enable~w~")
+            end
+
             AddTextComponentInteger(Radio.Frequency.Current)
             EndTextCommandDisplayHelp(false, false, false, -1)
 
@@ -409,19 +419,21 @@ Citizen.CreateThread(function()
             if IsControlJustPressed(0, Radio.Controls.Toggle.Key) then
                 Radio.On = not Radio.On
 
-                exports["tokovoip_script"]:SetTokoProperty("radioEnabled", Radio.On)
+                exports["mumble-voip"]:SetMumbleProperty("radioEnabled", Radio.On)
 
                 if Radio.On then
                     SendNUIMessage({ sound = "audio_on", volume = 0.3})
                     Radio:Add(Radio.Frequency.Current)
                 else
                     SendNUIMessage({ sound = "audio_off", volume = 0.5})
-                    Radio:Remove(Radio.Frequency.Current)
+                    Radio:Remove()
                 end
             end
 
             -- Change radio frequency
             if not Radio.On then
+                DisableControlAction(0, Radio.Controls.ToggleClicks.Key, false)
+
                 if not Radio.Controls.Decrease.Pressed then
                     if IsControlJustPressed(0, Radio.Controls.Decrease.Key) then
                         Radio.Controls.Decrease.Pressed = true
@@ -468,8 +480,9 @@ Citizen.CreateThread(function()
 
                             Citizen.Wait(500)
                             
+                            input = tonumber(input)
+
                             if input ~= nil then
-                                input = tonumber(input)
                                 if input >= minFrequency and input <= Radio.Frequency.Max and input == math.floor(input) then
                                     Radio.Frequency.Current = input
                                 end
@@ -478,6 +491,15 @@ Citizen.CreateThread(function()
                             Radio.Controls.Input.Pressed = false
                         end)
                     end
+                end
+                
+                -- Turn radio mic clicks on/off
+                if IsDisabledControlJustPressed(0, Radio.Controls.ToggleClicks.Key) then
+                    Radio.Clicks = not Radio.Clicks
+
+                    SendNUIMessage({ sound = "audio_off", volume = 0.5})
+                    
+                    exports["mumble-voip"]:SetMumbleProperty("radioClicks", Radio.Clicks)
                 end
             end
         else
@@ -503,9 +525,8 @@ Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(0)
 		if NetworkIsSessionStarted() then
-            exports["tokovoip_script"]:SetTokoProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
-            exports["tokovoip_script"]:SetTokoProperty("radioAnim", false) -- Disable built-in toko radio animation
-            exports["tokovoip_script"]:SetTokoProperty("radioEnabled", false) -- Disable radio control
+            exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", Radio.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
+            exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false) -- Disable radio control
 			return
 		end
 	end
