@@ -469,7 +469,7 @@ Citizen.CreateThread(function()
         end
         
         -- Remove player from private frequency that they don't have access to
-        if not radioConfig.Frequency.Access[radioConfig.Frequency.Current] and radioConfig.Frequency.Private[radioConfig.Frequency.Current] then
+        if not radioConfig.Frequency.Access[radioConfig.Frequency.Current] and radioConfig.Frequency.Private[radioConfig.Frequency.Current] and Radio.On then
             Radio:Remove()
             radioConfig.Frequency.CurrentIndex = 1
             radioConfig.Frequency.Current = minFrequency
