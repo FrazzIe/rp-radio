@@ -674,7 +674,7 @@ AddEventHandler("Radio.Toggle", function()
     local isFalling = IsPedFalling(playerPed)
     local isDead = IsEntityDead(playerPed)
     
-    if not isFalling and not isDead then
+    if not isFalling and not isDead and Radio.Enabled and Radio.Has then
         Radio:Toggle(not Radio.Open)
     end
 end)
