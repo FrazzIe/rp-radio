@@ -296,12 +296,24 @@ end
 
 -- Set if the radio is enabled or not
 function SetRadioEnabled(value)
-    Radio.Enabled = value
+    if type(value) == "string" then
+        value = value == "true"
+    elseif type(value) == "number" then
+        value = value == 1
+    end
+    
+    Radio.Enabled = value and true or false
 end
 
 -- Set if player has a radio or not
 function SetRadio(value)
-    Radio.Has = value
+    if type(value) == "string" then
+        value = value == "true"
+    elseif type(value) == "number" then
+        value = value == 1
+    end
+
+    Radio.Has = value and true or false
 end
 
 -- Set if player has access to use the radio when closed
@@ -669,5 +681,11 @@ end)
 
 RegisterNetEvent("Radio.Set")
 AddEventHandler("Radio.Set", function(value)
-    Radio.Has = value
+    if type(value) == "string" then
+        value = value == "true"
+    elseif type(value) == "number" then
+        value = value == 1
+    end
+
+    Radio.Has = value and true or false
 end)
