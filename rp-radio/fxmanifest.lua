@@ -4,7 +4,7 @@ game "gta5"
 name "rp-radio"
 description "An in-game radio which makes use of the mumble-voip radio API for FiveM"
 author "Frazzle (frazzle9999@gmail.com)"
-version "2.1.1"
+version "2.2"
 
 ui_page "index.html"
 
