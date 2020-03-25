@@ -628,7 +628,7 @@ Citizen.CreateThread(function()
 
                     SendNUIMessage({ sound = "audio_off", volume = 0.5})
                     
-                    exports["mumble-voip"]:SetMumbleProperty("radioClicks", Radio.Clicks)
+                    exports["mumble-voip"]:SetMumbleProperty("micClicks", Radio.Clicks)
                 end
             end
         else
