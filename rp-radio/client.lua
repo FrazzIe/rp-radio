@@ -110,13 +110,6 @@ function Radio:Toggle(toggle)
 
     if not self.Has or IsEntityDead(playerPed) then
         self.Open = false
-
-        NetworkRequestControlOfEntity(self.Handle)
-
-		while not NetworkHasControlOfEntity(self.Handle) and count < 5000 do
-            Citizen.Wait(0)
-            count = count + 1
-        end
         
         DetachEntity(self.Handle, true, false)
         DeleteEntity(self.Handle)
@@ -472,10 +465,10 @@ Citizen.CreateThread(function()
         if isActivatorPressed and isSecondaryPressed and not isFalling and Radio.Enabled and Radio.Has and not isDead then
             Radio:Toggle(not Radio.Open)
         elseif (Radio.Open or Radio.On) and ((not Radio.Enabled) or (not Radio.Has) or isDead) then
-            Radio:Toggle(false)
-            Radio.On = false
             Radio:Remove()
             exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false)
+            Radio:Toggle(false)
+            Radio.On = false
         elseif Radio.Open and isFalling then
             Radio:Toggle(false)
         end
