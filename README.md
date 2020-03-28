@@ -1,6 +1,11 @@
 # rp-radio
 An in-game radio which makes use of the mumble-voip radio API for FiveM
 
+#### Note
+By default the radio is disabled (its meant to be used as an in-game item) to give players the radio by default in the client.lua at the top change `Radio.Has` to `true`, if you would like to make it an item look at the replies on the FiveM forum post, there is a tutorial for adding it as an ESX item.
+
+The export that is used to give/take a players radio is `exports:["rp-radio"]:SetRadio(true/false)` or the event `Radio.Set`
+
 ### Exports
 Getters
 
