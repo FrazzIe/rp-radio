@@ -650,15 +650,19 @@ Citizen.CreateThread(function()
     end
 end)
 
-Citizen.CreateThread(function()
-	while true do
-		Citizen.Wait(0)
-		if NetworkIsSessionStarted() then
-            exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", radioConfig.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
-            exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false) -- Disable radio control
-			return
-		end
-	end
+AddEventHandler("onClientResourceStart", function(resName)
+	if GetCurrentResourceName() ~= resName and "mumble-voip" ~= resName then
+		return
+    end
+    
+    exports["mumble-voip"]:SetMumbleProperty("radioClickMaxChannel", radioConfig.Frequency.Max) -- Set radio clicks enabled for all radio frequencies
+    exports["mumble-voip"]:SetMumbleProperty("radioEnabled", false) -- Disable radio control
+
+    if Radio.Open then
+        Radio:Toggle(false)
+    end
+    
+    Radio.On = false
 end)
 
 RegisterNetEvent("Radio.Toggle")
