@@ -637,7 +637,7 @@ Citizen.CreateThread(function()
 				if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim then
 					RequestAnimDict(broadcastDictionary)
 	
-					while not HasAnimDictLoaded(broadcastDictionary) do
+                    while not HasAnimDictLoaded(broadcastDictionary) or IsPedInAnyVehicle(PlayerPedId(-1), false) do
 						Citizen.Wait(150)
 					end
 		
