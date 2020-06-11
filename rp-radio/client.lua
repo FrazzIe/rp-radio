@@ -634,12 +634,12 @@ Citizen.CreateThread(function()
 		else
 			-- Play emergency services radio animation
 			if radioConfig.AllowRadioWhenClosed then
-				if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim then
-					RequestAnimDict(broadcastDictionary)
-	
-                    while not HasAnimDictLoaded(broadcastDictionary) or IsPedInAnyVehicle(PlayerPedId(-1), false) do
-						Citizen.Wait(150)
-					end
+				if Radio.Has and Radio.On and isBroadcasting and not isPlayingBroadcastAnim and not IsPedInAnyVehicle(PlayerPedId(-1), false) then
+                    RequestAnimDict(broadcastDictionary)
+    
+                    while not HasAnimDictLoaded(broadcastDictionary) do
+                        Citizen.Wait(150)
+                    end
 		
 					TaskPlayAnim(playerPed, broadcastDictionary, broadcastAnimation, 8.0, 0.0, -1, 49, 0, 0, 0, 0)                    
 				elseif not isBroadcasting and isPlayingBroadcastAnim then
