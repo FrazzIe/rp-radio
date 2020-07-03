@@ -311,7 +311,7 @@ end
 
 -- Set if player has access to use the radio when closed
 function SetAllowRadioWhenClosed(value)
-	radioConfig.Frequency.AllowRadioWhenClosed = value
+	radioConfig.AllowRadioWhenClosed = value
 
 	if Radio.On and not Radio.Open and radioConfig.AllowRadioWhenClosed then
 		exports["mumble-voip"]:SetMumbleProperty("radioEnabled", true)
