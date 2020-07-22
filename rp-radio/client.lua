@@ -474,11 +474,17 @@ Citizen.CreateThread(function()
 		end
 		
 		-- Remove player from private frequency that they don't have access to
-		if not radioConfig.Frequency.Access[radioConfig.Frequency.Current] and radioConfig.Frequency.Private[radioConfig.Frequency.Current] and Radio.On then
-			Radio:Remove()
+		if not radioConfig.Frequency.Access[radioConfig.Frequency.Current] and radioConfig.Frequency.Private[radioConfig.Frequency.Current] then
+			if Radio.On then
+				Radio:Remove()
+			end
+
 			radioConfig.Frequency.CurrentIndex = 1
 			radioConfig.Frequency.Current = minFrequency
-			Radio:Add(radioConfig.Frequency.Current)
+
+			if Radio.On then
+				Radio:Add(radioConfig.Frequency.Current)
+			end
 		end
 
 		-- Check if player is holding radio
