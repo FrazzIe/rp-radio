@@ -1,5 +1,5 @@
 local Radio = {
-	Has = false,
+	Has = true,
 	Open = false,
 	On = false,
 	Enabled = true,
@@ -445,7 +445,10 @@ Citizen.CreateThread(function()
 	end
 
 	GenerateFrequencyList()
-
+	
+	-- Checking if help text component is activated
+	local IsHudComponentActive = IsHudComponentActive(10)
+	
 	while true do
 		Citizen.Wait(0)
 		-- Init local vars
@@ -498,6 +501,11 @@ Citizen.CreateThread(function()
 			-- Remove weapon in hand as we are using the radio
 			if currentWeapon ~= `weapon_unarmed` then
 				SetCurrentPedWeapon(playerPed, `weapon_unarmed`, true)
+			end
+			
+			-- If help text component is not active ShowHudComponentThisFrame
+			if not IsHudComponentActive then
+				ShowHudComponentThisFrame(10)
 			end
 
 			-- Display help text
